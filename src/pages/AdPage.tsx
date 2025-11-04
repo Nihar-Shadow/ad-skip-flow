@@ -24,6 +24,7 @@ const AdPage = () => {
     }
 
     setPageConfig(page);
+    setShowNext(false);
     updatePageVisit(currentPage);
   }, [currentPage, navigate]);
 
