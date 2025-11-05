@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AdPage from "./pages/AdPage";
 import DownloadPage from "./pages/DownloadPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import DeveloperDashboard from "./pages/DeveloperDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
           <Route path="/ad/:pageId" element={<AdPage />} />
           <Route path="/download" element={<DownloadPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/developer" element={<DeveloperDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
