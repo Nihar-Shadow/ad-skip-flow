@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Code2, Settings, BarChart3, Link } from "lucide-react";
+import { Code2, Settings, BarChart3, Link, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { auth } from "@/lib/auth";
 import AdManagement from "@/components/admin/AdManagement";
 import CountdownSettings from "@/components/admin/CountdownSettings";
 import Analytics from "@/components/admin/Analytics";
@@ -9,6 +12,18 @@ import LinkShortener from "@/components/admin/LinkShortener";
 
 const DeveloperDashboard = () => {
   const [activeTab, setActiveTab] = useState("ads");
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    console.log('🚪 DEBUG: Developer logout initiated');
+    auth.logout();
+    
+    // Force page reload to clear any cached state
+    setTimeout(() => {
+      console.log('🔄 DEBUG: Force reloading page after logout');
+      window.location.href = '/login';
+    }, 100);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -21,11 +36,22 @@ const DeveloperDashboard = () => {
                 <Code2 className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">Developer Panel</h1>
-                <p className="text-xs text-muted-foreground">Software Download Funnel</p>
-              </div>
+              <h1 className="text-xl font-bold text-foreground">Developer Panel</h1>
+              <p className="text-xs text-muted-foreground">Software Download Funnel</p>
             </div>
+          </div>
+          <div className="flex items-center gap-3">
             <ConfigManager />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </Button>
+          </div>
           </div>
         </div>
       </header>
