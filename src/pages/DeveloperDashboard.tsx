@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Code2, Settings, BarChart3 } from "lucide-react";
+import { Code2, Settings, BarChart3, Link } from "lucide-react";
 import AdManagement from "@/components/admin/AdManagement";
 import CountdownSettings from "@/components/admin/CountdownSettings";
 import Analytics from "@/components/admin/Analytics";
 import ConfigManager from "@/components/admin/ConfigManager";
+import LinkShortener from "@/components/admin/LinkShortener";
 
 const DeveloperDashboard = () => {
   const [activeTab, setActiveTab] = useState("ads");
@@ -32,7 +33,7 @@ const DeveloperDashboard = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
+          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-4">
             <TabsTrigger value="ads" className="gap-2">
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Ads</span>
@@ -40,6 +41,10 @@ const DeveloperDashboard = () => {
             <TabsTrigger value="countdown" className="gap-2">
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Countdown</span>
+            </TabsTrigger>
+            <TabsTrigger value="links" className="gap-2">
+              <Link className="w-4 h-4" />
+              <span className="hidden sm:inline">Links</span>
             </TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -53,6 +58,10 @@ const DeveloperDashboard = () => {
 
           <TabsContent value="countdown" className="space-y-6">
             <CountdownSettings />
+          </TabsContent>
+
+          <TabsContent value="links" className="space-y-6">
+            <LinkShortener />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">

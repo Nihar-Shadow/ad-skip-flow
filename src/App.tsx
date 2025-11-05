@@ -7,6 +7,7 @@ import AdPage from "./pages/AdPage";
 import DownloadPage from "./pages/DownloadPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import DeveloperDashboard from "./pages/DeveloperDashboard";
+import ShortLinkRedirect from "./pages/ShortLinkRedirect";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/download" element={<DownloadPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/developer" element={<DeveloperDashboard />} />
+          <Route path="/s/:shortCode" element={<ShortLinkRedirect />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
