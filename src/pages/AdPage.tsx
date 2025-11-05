@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { loadConfig, updatePageVisit, updateAdClick } from "@/lib/adFunnelConfig";
 import CountdownTimer from "@/components/CountdownTimer";
@@ -7,30 +7,65 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Download } from "lucide-react";
 
 const AdPage = () => {
-  const { pageId } = useParams<{ pageId: string }>();
+  const params = useParams();
+  const pageIdParam = params.pageId;
   const navigate = useNavigate();
-  const [showNext, setShowNext] = useState(false);
-  const [pageConfig, setPageConfig] = useState<any>(null);
 
-  const currentPage = parseInt(pageId || "1", 10);
+  const [showNext, setShowNext] = useState(false);
+  const [pageConfig, setPageConfig] = useState(null);
+
+  // store currentPage in state derived from param
+  const currentPage = parseInt(pageIdParam || "1", 10);
+
+  // keep a ref to the latest page so callbacks can confirm they're acting on the right page
+  const currentPageRef = useRef(currentPage);
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
 
   useEffect(() => {
-    const config = loadConfig();
-    const page = config.pages.find((p) => p.id === currentPage);
-    
+    // defensive: reset UI when page changes
+    setShowNext(false);
+
+    const config = typeof loadConfig === "function" ? loadConfig() : null;
+    if (!config || !Array.isArray(config.pages)) {
+      console.warn("ad funnel config missing or invalid", config);
+      navigate("/");
+      return;
+    }
+
+    // find page by numeric id (be tolerant of string ids)
+    const page = config.pages.find((p) => Number(p.id) === currentPage);
     if (!page) {
       navigate("/");
       return;
     }
 
     setPageConfig(page);
+
+    // track visit (guarded)
+    try {
+      updatePageVisit(currentPage);
+    } catch (err) {
+      console.warn("updatePageVisit failed:", err);
+    }
+
+    // ensure showNext is false until countdown triggers for this page
     setShowNext(false);
-    updatePageVisit(currentPage);
   }, [currentPage, navigate]);
 
-  const handleCountdownComplete = () => {
+  // The handler for CountdownTimer completion.
+  // We use useCallback so the function identity is stable,
+  // but we also check currentPageRef to ensure this completion belongs to the active page.
+  const handleCountdownComplete = useCallback(() => {
+    // guard: ensure the completion is for the active page
+    // (this protects against any stale timer firing after navigation)
+    if (currentPageRef.current !== currentPage) {
+      // stale completion — ignore
+      return;
+    }
     setShowNext(true);
-  };
+  }, [currentPage]);
 
   const handleNext = () => {
     if (currentPage < 4) {
@@ -40,13 +75,24 @@ const AdPage = () => {
     }
   };
 
-  const handleAdClick = (adId: string) => {
-    updateAdClick(adId);
+  const handleAdClick = (adId) => {
+    try {
+      updateAdClick(adId);
+    } catch (err) {
+      console.warn("updateAdClick failed:", err);
+    }
   };
 
   if (!pageConfig) {
     return null;
   }
+
+  // defensive fallbacks
+  const countdownSeconds =
+    typeof pageConfig.countdown === "number" && pageConfig.countdown >= 0
+      ? pageConfig.countdown
+      : 10;
+  const ads = Array.isArray(pageConfig.ads) ? pageConfig.ads : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -80,30 +126,32 @@ const AdPage = () => {
         <div className="max-w-6xl mx-auto space-y-12">
           {/* Countdown Section */}
           <div className="text-center space-y-4">
-            <h2 className="text-3xl font-bold text-foreground">
-              Preparing Your Download
-            </h2>
+            <h2 className="text-3xl font-bold text-foreground">Preparing Your Download</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Your download will be ready in a moment. While you wait, check out these premium offers from our partners.
+              Your download will be ready in a moment. While you wait, check out these premium
+              offers from our partners.
             </p>
-            
+
             <div className="pt-6">
+              {/* IMPORTANT: give CountdownTimer a key that changes per-page so it remounts fresh.
+                  This prevents any internal timer state from leaking across pages. */}
               <CountdownTimer
-                seconds={pageConfig.countdown}
+                key={`countdown-page-${currentPage}-${countdownSeconds}`}
+                seconds={countdownSeconds}
                 onComplete={handleCountdownComplete}
               />
             </div>
           </div>
 
           {/* Ads Section */}
-          {pageConfig.ads.length > 0 && (
+          {ads.length > 0 && (
             <div>
               <h3 className="text-xl font-semibold text-foreground mb-6 text-center">
                 Featured Offers
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pageConfig.ads.map((ad: any) => (
-                  <AdCard key={ad.id} ad={ad} onAdClick={handleAdClick} />
+                {ads.map((ad) => (
+                  <AdCard key={ad.id} ad={ad} onAdClick={() => handleAdClick(ad.id)} />
                 ))}
               </div>
             </div>
