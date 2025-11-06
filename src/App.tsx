@@ -10,6 +10,9 @@ import DeveloperDashboard from "./pages/DeveloperDashboard";
 import ShortLinkRedirect from "./pages/ShortLinkRedirect";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import UserLogin from "./pages/user/UserLogin";
+import UserSignup from "./pages/user/UserSignup";
+import UserDashboard from "./pages/user/UserDashboard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useSessionCleanup, useActivityTracker } from "./hooks/useSessionCleanup";
 
@@ -25,6 +28,9 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Navigate to="/ad/1" replace />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/user/login" element={<UserLogin />} />
+        <Route path="/user/signup" element={<UserSignup />} />
+        <Route path="/user/dashboard" element={<UserDashboard />} />
         <Route path="/ad/:pageId" element={<AdPage />} />
         <Route path="/download" element={<DownloadPage />} />
         <Route 

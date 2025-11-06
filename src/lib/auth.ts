@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface User {
   id: string;
   username: string;
@@ -11,6 +13,13 @@ export interface AuthUser {
   loggedIn: boolean;
   sessionStart?: number;
   lastActivity?: number;
+}
+
+export interface SupabaseAuthUser {
+  id: string;
+  email: string;
+  role: "user";
+  loggedIn: boolean;
 }
 
 // Hardcoded credentials as requested
@@ -188,8 +197,107 @@ export const auth = {
     return user?.loggedIn === true && user?.role === role;
   },
 
+  async supabaseLogin(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log('🔍 DEBUG: Attempting Supabase login for email:', email);
+      
+      // Use actual Supabase authentication
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('❌ DEBUG: Supabase login error:', error);
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        const authUser: SupabaseAuthUser = {
+          id: data.user.id,
+          email: data.user.email!,
+          role: "user",
+          loggedIn: true,
+        };
+        localStorage.setItem('supabase_auth_user', JSON.stringify(authUser));
+        console.log('✅ DEBUG: Supabase login successful!');
+        return { success: true };
+      } else {
+        console.log('❌ DEBUG: Supabase login failed - no user returned');
+        return { success: false, error: 'Invalid email or password' };
+      }
+    } catch (error) {
+      console.error('❌ DEBUG: Supabase login error:', error);
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  },
+
   getUserRole(): "admin" | "developer" | null {
     const user = this.getCurrentUser();
     return user?.loggedIn ? user.role : null;
+  },
+
+  async supabaseSignup(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log('🔍 DEBUG: Attempting Supabase signup for email:', email);
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('❌ DEBUG: Supabase signup error:', error);
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        const authUser: SupabaseAuthUser = {
+          id: data.user.id,
+          email: data.user.email!,
+          role: "user",
+          loggedIn: true,
+        };
+        localStorage.setItem('supabase_auth_user', JSON.stringify(authUser));
+        console.log('✅ DEBUG: Supabase signup successful!');
+        return { success: true };
+      }
+
+      return { success: false, error: 'Signup failed - no user created' };
+    } catch (error) {
+      console.error('❌ DEBUG: Supabase signup error:', error);
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  },
+
+  async supabaseLogout(): Promise<void> {
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem('supabase_auth_user');
+    } catch (error) {
+      console.error('Supabase logout error:', error);
+    }
+  },
+
+  getSupabaseCurrentUser(): SupabaseAuthUser | null {
+    const stored = localStorage.getItem('supabase_auth_user');
+    if (!stored) return null;
+    
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return null;
+    }
+  },
+
+  isSupabaseAuthenticated(): boolean {
+    const user = this.getSupabaseCurrentUser();
+    return user?.loggedIn === true;
   }
 };
+
+// Export standalone functions for external use
+export const supabaseLogin = (email: string, password: string) => auth.supabaseLogin(email, password);
+export const supabaseSignup = (email: string, password: string): Promise<{ success: boolean; error?: string }> => auth.supabaseSignup(email, password);
+export const supabaseLogout = () => auth.supabaseLogout();
+export const isSupabaseAuthenticated = () => auth.isSupabaseAuthenticated();

@@ -41,6 +41,47 @@ export type Database = {
         }
         Relationships: []
       }
+      users_data: {
+        Row: {
+          ads: Json
+          analytics: Json
+          countdown: number
+          created_at: string
+          id: string
+          short_links: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ads?: Json
+          analytics?: Json
+          countdown?: number
+          created_at?: string
+          id?: string
+          short_links?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ads?: Json
+          analytics?: Json
+          countdown?: number
+          created_at?: string
+          id?: string
+          short_links?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_data_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
