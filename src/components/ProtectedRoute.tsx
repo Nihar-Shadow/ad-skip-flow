@@ -1,33 +1,39 @@
 import { Navigate } from "react-router-dom";
-import { auth } from "@/lib/auth";
-import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ("admin" | "developer")[];
+  allowedRoles?: ("admin" | "developer" | "user")[];
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const isAuthenticated = auth.isAuthenticated();
-  const userRole = auth.getUserRole();
+  const { user, userRole, loading } = useAuth();
 
-  useEffect(() => {
-    // Update last activity on component mount (user is accessing protected content)
-    if (isAuthenticated) {
-      auth.updateLastActivity();
-    }
-  }, [isAuthenticated]);
-
-  if (!isAuthenticated) {
-    console.log('🔒 DEBUG: ProtectedRoute - User not authenticated, redirecting to login');
-    return <Navigate to="/login" replace />;
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
+  // Redirect to login if not authenticated
+  if (!user) {
+    return <Navigate to="/user/login" replace />;
+  }
+
+  // Check role permissions
   if (allowedRoles && userRole && !allowedRoles.includes(userRole)) {
-    console.log('🔒 DEBUG: ProtectedRoute - User role not allowed, redirecting to login');
-    // Clear session if user somehow accessed wrong role-protected area
-    auth.logout();
-    return <Navigate to="/login" replace />;
+    // Redirect based on user's actual role
+    if (userRole === 'admin') {
+      return <Navigate to="/admin" replace />;
+    } else if (userRole === 'developer') {
+      return <Navigate to="/developer" replace />;
+    } else {
+      return <Navigate to="/user/dashboard" replace />;
+    }
   }
 
   return <>{children}</>;

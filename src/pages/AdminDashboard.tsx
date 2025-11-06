@@ -1,33 +1,28 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutDashboard, Settings, BarChart3, Link, LogOut } from "lucide-react";
+import { LayoutDashboard, Settings, BarChart3, Link, LogOut, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { auth } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 import AdManagement from "@/components/admin/AdManagement";
 import CountdownSettings from "@/components/admin/CountdownSettings";
 import Analytics from "@/components/admin/Analytics";
 import ConfigManager from "@/components/admin/ConfigManager";
 import LinkShortener from "@/components/admin/LinkShortener";
+import { UserManagement } from "@/components/user/UserManagement";
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState("ads");
+  const [activeTab, setActiveTab] = useState("users");
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
-  const handleLogout = () => {
-    console.log('🚪 DEBUG: Admin logout initiated');
-    auth.logout();
-    
-    // Force page reload to clear any cached state
-    setTimeout(() => {
-      console.log('🔄 DEBUG: Force reloading page after logout');
-      window.location.href = '/login';
-    }, 100);
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/user/login');
   };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card shadow-soft sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -42,12 +37,7 @@ const AdminDashboard = () => {
           </div>
           <div className="flex items-center gap-3">
             <ConfigManager />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="gap-2"
-            >
+            <Button variant="outline" size="sm" onClick={handleLogout} className="gap-2">
               <LogOut className="w-4 h-4" />
               Logout
             </Button>
@@ -56,10 +46,13 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-4">
+          <TabsList className="grid w-full max-w-3xl mx-auto grid-cols-5">
+            <TabsTrigger value="users" className="gap-2">
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Users</span>
+            </TabsTrigger>
             <TabsTrigger value="ads" className="gap-2">
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Ads</span>
@@ -78,21 +71,11 @@ const AdminDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="ads" className="space-y-6">
-            <AdManagement />
-          </TabsContent>
-
-          <TabsContent value="countdown" className="space-y-6">
-            <CountdownSettings />
-          </TabsContent>
-
-          <TabsContent value="links" className="space-y-6">
-            <LinkShortener />
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-6">
-            <Analytics />
-          </TabsContent>
+          <TabsContent value="users"><UserManagement /></TabsContent>
+          <TabsContent value="ads"><AdManagement /></TabsContent>
+          <TabsContent value="countdown"><CountdownSettings /></TabsContent>
+          <TabsContent value="links"><LinkShortener /></TabsContent>
+          <TabsContent value="analytics"><Analytics /></TabsContent>
         </Tabs>
       </main>
     </div>
