@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { loadConfig, updatePageVisit, updateAdClick } from "@/lib/adFunnelConfig";
 import CountdownTimer from "@/components/CountdownTimer";
 import AdCard from "@/components/AdCard";
@@ -104,18 +104,23 @@ const AdPage = () => {
               <Download className="w-6 h-6 text-primary" />
               <h1 className="text-xl font-bold text-foreground">Software Download</h1>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Step {currentPage} of 4</span>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4].map((step) => (
-                  <div
-                    key={step}
-                    className={`w-2 h-2 rounded-full transition-smooth ${
-                      step <= currentPage ? "bg-primary" : "bg-muted"
-                    }`}
-                  />
-                ))}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Step {currentPage} of 4</span>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4].map((step) => (
+                    <div
+                      key={step}
+                      className={`w-2 h-2 rounded-full transition-smooth ${
+                        step <= currentPage ? "bg-primary" : "bg-muted"
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
+              <Link to="/user/dashboard">
+                <Button variant="outline" size="sm">User Dashboard</Button>
+              </Link>
             </div>
           </div>
         </div>

@@ -9,6 +9,10 @@ import AdminDashboard from "./pages/AdminDashboard";
 import DeveloperDashboard from "./pages/DeveloperDashboard";
 import ShortLinkRedirect from "./pages/ShortLinkRedirect";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import UserLogin from "./pages/user/UserLogin";
+import UserSignup from "./pages/user/UserSignup";
+import UserDashboard from "./pages/user/UserDashboard";
 import UserLogin from "./pages/UserLogin";
 import UserSignup from "./pages/UserSignup";
 import UserDashboard from "./pages/UserDashboard";
@@ -20,6 +24,34 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   return (
     <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/ad/1" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/user/login" element={<UserLogin />} />
+        <Route path="/user/signup" element={<UserSignup />} />
+        <Route path="/user/dashboard" element={<UserDashboard />} />
+        <Route path="/ad/:pageId" element={<AdPage />} />
+        <Route path="/download" element={<DownloadPage />} />
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/developer" 
+          element={
+            <ProtectedRoute allowedRoles={["developer"]}>
+              <DeveloperDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="/s/:shortCode" element={<ShortLinkRedirect />} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
       <AuthProvider>
         <Routes>
           <Route path="/" element={<Navigate to="/ad/1" replace />} />
