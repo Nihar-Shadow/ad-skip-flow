@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login Debug</title>
+</head>
+<body>
+    <h1>Login Debug Test</h1>
+    <div id="debug-info"></div>
+    
+    <script>
+        // Simple auth test without React
+        const HARDCODED_USERS = [
+            {
+                id: "1",
+                username: "pikachu",
+                password: "Ad@123",
+                role: "admin"
+            },
+            {
+                id: "2",
+                username: "fkingdev",
+                password: "Fd@123",
+                role: "developer"
+            }
+        ];
+        
+        function testLogin(username, password) {
+            console.log('Testing login for:', username);
+            const user = HARDCODED_USERS.find(
+                u => u.username === username && u.password === password
+            );
+            
+            if (user) {
+                console.log('✅ Login successful!');
+                return user;
+            } else {
+                console.log('❌ Login failed');
+                return null;
+            }
+        }
+        
+        // Test the credentials
+        const result = testLogin('pikachu', 'Ad@123');
+        
+        document.getElementById('debug-info').innerHTML = `
+            <p>Login test result: ${result ? 'SUCCESS' : 'FAILED'}</p>
+            ${result ? `<p>User: ${JSON.stringify(result)}</p>` : ''}
+        `;
+    </script>
+</body>
+</html>

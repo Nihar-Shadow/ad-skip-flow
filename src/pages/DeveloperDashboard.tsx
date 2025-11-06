@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutDashboard, Settings, BarChart3, Link, LogOut } from "lucide-react";
+import { Code2, Settings, BarChart3, Link, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
@@ -10,12 +10,12 @@ import Analytics from "@/components/admin/Analytics";
 import ConfigManager from "@/components/admin/ConfigManager";
 import LinkShortener from "@/components/admin/LinkShortener";
 
-const AdminDashboard = () => {
+const DeveloperDashboard = () => {
   const [activeTab, setActiveTab] = useState("ads");
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    console.log('🚪 DEBUG: Admin logout initiated');
+    console.log('🚪 DEBUG: Developer logout initiated');
     auth.logout();
     
     // Force page reload to clear any cached state
@@ -33,10 +33,10 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-gradient-primary rounded-lg p-2">
-                <LayoutDashboard className="w-6 h-6 text-white" />
+                <Code2 className="w-6 h-6 text-white" />
               </div>
               <div>
-              <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
+              <h1 className="text-xl font-bold text-foreground">Developer Panel</h1>
               <p className="text-xs text-muted-foreground">Software Download Funnel</p>
             </div>
           </div>
@@ -99,4 +99,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+export default DeveloperDashboard;

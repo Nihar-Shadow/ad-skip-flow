@@ -6,25 +6,57 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AdPage from "./pages/AdPage";
 import DownloadPage from "./pages/DownloadPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import DeveloperDashboard from "./pages/DeveloperDashboard";
+import ShortLinkRedirect from "./pages/ShortLinkRedirect";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { useSessionCleanup, useActivityTracker } from "./hooks/useSessionCleanup";
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  // Initialize session cleanup and activity tracking
+  useSessionCleanup();
+  useActivityTracker();
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/ad/1" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/ad/:pageId" element={<AdPage />} />
+        <Route path="/download" element={<DownloadPage />} />
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/developer" 
+          element={
+            <ProtectedRoute allowedRoles={["developer"]}>
+              <DeveloperDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="/s/:shortCode" element={<ShortLinkRedirect />} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/ad/1" replace />} />
-          <Route path="/ad/:pageId" element={<AdPage />} />
-          <Route path="/download" element={<DownloadPage />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AppContent />
     </TooltipProvider>
   </QueryClientProvider>
 );
