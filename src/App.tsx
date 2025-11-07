@@ -13,9 +13,6 @@ import Login from "./pages/Login";
 import UserLogin from "./pages/user/UserLogin";
 import UserSignup from "./pages/user/UserSignup";
 import UserDashboard from "./pages/user/UserDashboard";
-import UserLogin from "./pages/UserLogin";
-import UserSignup from "./pages/UserSignup";
-import UserDashboard from "./pages/UserDashboard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./hooks/useAuth";
 
@@ -23,79 +20,45 @@ const queryClient = new QueryClient();
 
 const AppContent = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/ad/1" replace />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/user/login" element={<UserLogin />} />
-        <Route path="/user/signup" element={<UserSignup />} />
-        <Route path="/user/dashboard" element={<UserDashboard />} />
-        <Route path="/ad/:pageId" element={<AdPage />} />
-        <Route path="/download" element={<DownloadPage />} />
-        <Route 
-          path="/admin" 
-          element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/developer" 
-          element={
-            <ProtectedRoute allowedRoles={["developer"]}>
-              <DeveloperDashboard />
-            </ProtectedRoute>
-          } 
-        />
-        <Route path="/s/:shortCode" element={<ShortLinkRedirect />} />
-        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <AuthProvider>
+    <AuthProvider>
+      <BrowserRouter>
         <Routes>
           <Route path="/" element={<Navigate to="/ad/1" replace />} />
-          
-          {/* User Auth Routes */}
+          <Route path="/login" element={<Login />} />
           <Route path="/user/login" element={<UserLogin />} />
           <Route path="/user/signup" element={<UserSignup />} />
-          <Route 
-            path="/user/dashboard" 
+          <Route
+            path="/user/dashboard"
             element={
               <ProtectedRoute allowedRoles={["user", "developer", "admin"]}>
                 <UserDashboard />
               </ProtectedRoute>
-            } 
+            }
           />
-          
-          {/* Public Routes */}
           <Route path="/ad/:pageId" element={<AdPage />} />
           <Route path="/download" element={<DownloadPage />} />
-          <Route path="/s/:shortCode" element={<ShortLinkRedirect />} />
-          
-          {/* Admin/Developer Routes */}
-          <Route 
-            path="/admin" 
+          <Route
+            path="/admin"
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
                 <AdminDashboard />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/developer" 
+          <Route
+            path="/developer"
             element={
               <ProtectedRoute allowedRoles={["developer", "admin"]}>
                 <DeveloperDashboard />
               </ProtectedRoute>
-            } 
+            }
           />
-          
-          {/* Catch-all */}
+          <Route path="/s/:shortCode" element={<ShortLinkRedirect />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   );
 };
 
