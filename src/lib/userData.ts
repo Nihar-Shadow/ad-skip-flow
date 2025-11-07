@@ -21,6 +21,7 @@ export interface ShortLink {
   shortCode: string;
   clickCount: number;
   createdAt: string;
+  userId?: string;
   [key: string]: Json | undefined;
 }
 
@@ -44,10 +45,8 @@ export interface Analytics {
 interface UserDataActual {
   id: string;
   user_id: string;
-  ads: any;
-  countdown: number;
-  short_links: any;
-  analytics: any;
+  ads_uploaded: any;
+  downloads: any;
   created_at: string;
   updated_at: string;
 }
@@ -69,25 +68,11 @@ export const userDataAPI = {
         return null;
       }
 
-      return data ? this.transformUserData(data as UserDataActual) : null;
+      return data as UserData;
     } catch (error) {
       console.error('Error in getUserData:', error);
       return null;
     }
-  },
-
-  transformUserData(data: UserDataActual): UserData {
-    return {
-      ...data,
-      ads: typeof data.ads === 'string' ? JSON.parse(data.ads) : (Array.isArray(data.ads) ? data.ads : []),
-      short_links: typeof data.short_links === 'string' ? JSON.parse(data.short_links) : (Array.isArray(data.short_links) ? data.short_links : []),
-      analytics: typeof data.analytics === 'string' ? JSON.parse(data.analytics) : (data.analytics || {
-        totalClicks: 0,
-        totalViews: 0,
-        popularLinks: [],
-        adPerformance: []
-      })
-    };
   },
 
   async getOrCreateUserData(): Promise<UserData> {
@@ -101,16 +86,7 @@ export const userDataAPI = {
 
       // Create new user data if it doesn't exist
       const newUserData: UserDataInsert = {
-        user_id: user.id,
-        ads: [],
-        countdown: 30,
-        short_links: [],
-        analytics: {
-          totalClicks: 0,
-          totalViews: 0,
-          popularLinks: [],
-          adPerformance: []
-        }
+        user_id: user.id
       };
 
       const { data, error } = await supabase
@@ -124,7 +100,7 @@ export const userDataAPI = {
         throw error;
       }
 
-      return this.transformUserData(data as UserDataActual);
+      return data as UserData;
     } catch (error) {
       console.error('Error in getOrCreateUserData:', error);
       throw error;
@@ -138,7 +114,7 @@ export const userDataAPI = {
 
       const { error } = await supabase
         .from('users_data')
-        .update({ ads })
+        .update({ ads_uploaded: ads })
         .eq('user_id', user.id);
 
       if (error) {
@@ -158,7 +134,7 @@ export const userDataAPI = {
 
       const { error } = await supabase
         .from('users_data')
-        .update({ countdown })
+        .update({ downloads: countdown })
         .eq('user_id', user.id);
 
       if (error) {
@@ -171,38 +147,96 @@ export const userDataAPI = {
     }
   },
 
-  async addShortLink(link: ShortLink): Promise<void> {
+  async getShortLinks(): Promise<ShortLink[]> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
-      // Get current short links
-      const { data: currentData, error: fetchError } = await supabase
-        .from('users_data')
-        .select('short_links')
+      const { data, error } = await supabase
+        .from('short_links')
+        .select('*')
         .eq('user_id', user.id)
-        .single();
-
-      if (fetchError) {
-        console.error('Error fetching current short links:', fetchError);
-        throw fetchError;
-      }
-
-      const currentLinksRaw = currentData?.short_links;
-      const currentLinks: ShortLink[] = Array.isArray(currentLinksRaw)
-        ? (currentLinksRaw as ShortLink[])
-        : [];
-      const updatedLinks: ShortLink[] = [...currentLinks, link];
-
-      const { error } = await supabase
-        .from('users_data')
-        .update({ short_links: updatedLinks })
-        .eq('user_id', user.id);
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error adding short link:', error);
+        console.error('Error fetching short links:', error);
         throw error;
       }
+
+      return (data || []).map(link => ({
+        id: link.id,
+        originalUrl: link.original_url,
+        shortCode: link.short_code,
+        clickCount: link.click_count,
+        createdAt: link.created_at,
+        userId: link.user_id
+      })) as ShortLink[];
+    } catch (error) {
+      console.error('Error in getShortLinks:', error);
+      throw error;
+    }
+  },
+
+  async addShortLink(link: ShortLink): Promise<ShortLink> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user');
+
+      let shortCode = link.shortCode;
+      let attempts = 0;
+      const maxAttempts = 10;
+
+      while (attempts < maxAttempts) {
+        // Check if short_code already exists
+        const { data: existingLink, error: checkError } = await supabase
+          .from('short_links')
+          .select('id')
+          .eq('short_code', shortCode)
+          .single();
+
+        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found"
+          console.error('Error checking short code uniqueness:', checkError);
+          throw checkError;
+        }
+
+        if (!existingLink) {
+          break; // Code is unique
+        }
+
+        // Generate new code if duplicate
+        shortCode = Math.random().toString(36).substring(2, Math.floor(Math.random() * 3) + 8); // 6-8 chars
+        attempts++;
+      }
+
+      if (attempts >= maxAttempts) {
+        throw new Error('Unable to generate unique short code. Please try again.');
+      }
+
+      // Insert into short_links table
+      const { data: insertedLink, error: insertError } = await supabase
+        .from('short_links')
+        .insert({
+          short_code: shortCode,
+          original_url: link.originalUrl,
+          user_id: user.id,
+          click_count: 0
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error inserting short link:', insertError);
+        throw insertError;
+      }
+
+      return {
+        id: insertedLink.id,
+        originalUrl: insertedLink.original_url,
+        shortCode: insertedLink.short_code,
+        clickCount: insertedLink.click_count,
+        createdAt: insertedLink.created_at,
+        userId: insertedLink.user_id
+      } as ShortLink;
     } catch (error) {
       console.error('Error in addShortLink:', error);
       throw error;
@@ -216,7 +250,7 @@ export const userDataAPI = {
 
       const { error } = await supabase
         .from('users_data')
-        .update({ analytics })
+        .update({ downloads: analytics })
         .eq('user_id', user.id);
 
       if (error) {
@@ -262,7 +296,7 @@ export const userDataAPI = {
         throw error;
       }
 
-      return data ? data.map(item => this.transformUserData(item as UserDataActual)) : [];
+      return data as UserData[];
     } catch (error) {
       console.error('Error in getAllUsersData:', error);
       throw error;

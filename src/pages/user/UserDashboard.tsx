@@ -13,6 +13,7 @@ import MyAnalytics from '@/components/user/MyAnalytics';
 
 const UserDashboard: React.FC = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [shortLinks, setShortLinks] = useState<ShortLink[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -28,9 +29,13 @@ const UserDashboard: React.FC = () => {
 
         const data = await userDataAPI.getOrCreateUserData();
         setUserData(data);
+
+        // Load short links
+        const links = await userDataAPI.getShortLinks();
+        setShortLinks(links);
       } catch (err) {
         console.error('Error loading user data:', err);
-        setError('Failed to load user data. Please try again.');
+        setError(`Failed to load user data: ${err instanceof Error ? err.message : 'Unknown error'}`);
       } finally {
         setIsLoading(false);
       }
@@ -70,12 +75,12 @@ const UserDashboard: React.FC = () => {
 
   const handleAddShortLink = async (link: ShortLink) => {
     try {
-      await userDataAPI.addShortLink(link);
-      const updatedData = await userDataAPI.getUserData();
-      setUserData(updatedData);
+      const newLink = await userDataAPI.addShortLink(link);
+      // Add the new link to the state immediately
+      setShortLinks(prev => [newLink, ...prev]);
     } catch (err) {
       console.error('Error adding short link:', err);
-      setError('Failed to add short link. Please try again.');
+      throw err; // Re-throw to let LinkShortener handle the error display
     }
   };
 
@@ -135,7 +140,7 @@ const UserDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">User Dashboard</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Linkzy</h1>
               <p className="text-gray-600">Manage your ads, links, and analytics</p>
             </div>
             <Button
@@ -151,43 +156,58 @@ const UserDashboard: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="ads" className="space-y-6">
+        <Tabs defaultValue="analytics" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="ads">🧩 My Ads</TabsTrigger>
+            <TabsTrigger value="analytics">📊 Analytics</TabsTrigger>
             <TabsTrigger value="countdown">⏱ Countdown</TabsTrigger>
             <TabsTrigger value="links">🔗 Links</TabsTrigger>
-            <TabsTrigger value="analytics">📊 Analytics</TabsTrigger>
+            <TabsTrigger value="ads">🧩 My Ads</TabsTrigger>
           </TabsList>
 
           <TabsContent value="ads">
             <MyAdsSection
-              ads={Array.isArray(userData.ads) ? (userData.ads as Ad[]) : []}
+              ads={Array.isArray(userData.ads_uploaded) ? (userData.ads_uploaded as Ad[]) : []}
               onAdsUpdate={handleUpdateAds}
             />
           </TabsContent>
 
           <TabsContent value="countdown">
             <CountdownSettings
-              currentCountdown={userData.countdown || 30}
+              currentCountdown={
+                typeof userData.downloads === 'number'
+                  ? userData.downloads
+                  : Array.isArray(userData.downloads)
+                    ? 30
+                    : typeof userData.downloads === 'object' && userData.downloads !== null
+                      ? 30
+                      : 30
+              }
               onCountdownUpdate={handleUpdateCountdown}
             />
           </TabsContent>
 
           <TabsContent value="links">
             <LinkShortener
-              links={Array.isArray(userData.short_links) ? (userData.short_links as ShortLink[]) : []}
+              links={shortLinks}
               onLinkAdded={handleAddShortLink}
             />
           </TabsContent>
 
           <TabsContent value="analytics">
             <MyAnalytics
-              analytics={(userData.analytics as Analytics) || ({
-                totalClicks: 0,
-                totalViews: 0,
-                popularLinks: [],
-                adPerformance: []
-              } as Analytics)}
+              analytics={
+                typeof userData.downloads === 'object' &&
+                userData.downloads !== null &&
+                !Array.isArray(userData.downloads) &&
+                typeof (userData.downloads as any).totalClicks === 'number'
+                  ? (userData.downloads as Analytics)
+                  : ({
+                      totalClicks: 0,
+                      totalViews: 0,
+                      popularLinks: [],
+                      adPerformance: []
+                    } as Analytics)
+              }
               onAnalyticsUpdate={handleUpdateAnalytics}
             />
           </TabsContent>

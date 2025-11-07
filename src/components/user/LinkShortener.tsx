@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Copy, ExternalLink, Plus, Trash2 } from 'lucide-react';
+import { Copy, ExternalLink, Plus, Trash2, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import type { ShortLink } from '@/lib/userData';
 
 interface LinkShortenerProps {
@@ -18,18 +19,25 @@ const LinkShortener: React.FC<LinkShortenerProps> = ({ links, onLinkAdded }) => 
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [lastCreatedLink, setLastCreatedLink] = useState<ShortLink | null>(null);
 
   const generateShortCode = (): string => {
     if (customShortCode.trim()) {
       return customShortCode.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
     }
-    return Math.random().toString(36).substring(2, 8);
+    const length = Math.floor(Math.random() * 3) + 6; // 6, 7, or 8 characters
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let code = '';
+    for (let i = 0; i < length; i++) {
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return code;
   };
 
   const isValidUrl = (url: string): boolean => {
     try {
-      new URL(url);
-      return true;
+      const urlObj = new URL(url);
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
     } catch {
       return false;
     }
@@ -55,12 +63,6 @@ const LinkShortener: React.FC<LinkShortenerProps> = ({ links, onLinkAdded }) => 
     }
 
     const shortCode = generateShortCode();
-    
-    // Check if short code already exists
-    if (links.some(link => link.shortCode === shortCode)) {
-      setError('This short code is already taken. Please try another one.');
-      return;
-    }
 
     setIsCreating(true);
 
@@ -73,13 +75,17 @@ const LinkShortener: React.FC<LinkShortenerProps> = ({ links, onLinkAdded }) => 
         createdAt: new Date().toISOString()
       };
 
-      onLinkAdded(newLink);
-      
+      await onLinkAdded(newLink);
+      setLastCreatedLink(newLink);
+
+      // Show success toast
+      toast.success('Short link created successfully!');
+
       // Reset form
       setOriginalUrl('');
       setCustomShortCode('');
     } catch (err) {
-      setError('Failed to create short link. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to create short link. Please try again.');
     } finally {
       setIsCreating(false);
     }
