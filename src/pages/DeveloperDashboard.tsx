@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Code2, Settings, BarChart3, Link, LogOut, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
+import { auth } from "@/lib/auth";
 import AdManagement from "@/components/admin/AdManagement";
 import CountdownSettings from "@/components/admin/CountdownSettings";
 import Analytics from "@/components/admin/Analytics";
@@ -14,11 +14,10 @@ import { UserManagement } from "@/components/user/UserManagement";
 const DeveloperDashboard = () => {
   const [activeTab, setActiveTab] = useState("users");
   const navigate = useNavigate();
-  const { signOut } = useAuth();
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/user/login');
+  const handleLogout = () => {
+    auth.logout();
+    navigate('/login');
   };
 
   return (
